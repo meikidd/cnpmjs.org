@@ -3,9 +3,10 @@
 var debug = require('debug')('cnpmjs.org:controllers:registry:package:show');
 var semver = require('semver');
 var packageService = require('../../../services/package');
-var setDownloadURL = require('../../../lib/common').setDownloadURL;
+var common = require('../../../lib/common');
 var SyncModuleWorker = require('../../sync_module_worker');
 var config = require('../../../config');
+var urllib = require('../../../common/urllib');
 
 /**
  * [deprecate] api
@@ -33,7 +34,7 @@ module.exports = function* show() {
   }
 
   if (mod) {
-    setDownloadURL(mod.package, this);
+    common.setDownloadURL(mod.package, this);
     mod.package._cnpm_publish_time = mod.publish_time;
     mod.package.publish_time = mod.package.publish_time || mod.publish_time;
     var rs = yield [
@@ -70,5 +71,20 @@ module.exports = function* show() {
   var logId = yield SyncModuleWorker.sync(name, 'sync-by-install');
   debug('start sync %s, get log id %s', name, logId);
 
-  this.redirect(config.officialNpmRegistry + this.url);
+  
+  // this.redirect(config.officialNpmRegistry + this.url);
+  // 使用代理请求
+  var res = yield urllib.request(config.officialNpmRegistry + this.url, {
+    headers: {
+      connection: this.headers.connection,
+      referer: this.headers.referer,
+      'user-agent': this.headers['user-agent']
+    },
+    dataType: 'json',
+    timeout: 20000
+  });
+  // 将 dist.tarball 地址指定到 /wnpm-download/:name/:version 路径下，进行自定义下载
+  common.setWnpmDownloadURL(res.data,  this);
+  this.status = res.status;
+  this.body = res.data;
 };

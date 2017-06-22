@@ -29,3 +29,7 @@ coverage/
 config/web_readme.md
 .tmp/
 *.sqlite
+
+sqlite-data/
+.vscode/
+.npmrc

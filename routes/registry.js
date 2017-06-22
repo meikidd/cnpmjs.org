@@ -33,6 +33,8 @@ var sync = require('../controllers/sync');
 var userPackage = require('../controllers/registry/user_package');
 var tags = require('../controllers/registry/package/dist_tag');
 
+var wnpmDownload = require('../controllers/registry/package/wnpm_download');
+
 function routes(app) {
 
   function* jsonp(next) {
@@ -43,6 +45,9 @@ function routes(app) {
   }
 
   app.get('/', jsonp, showTotal);
+
+  // 直接代理到源仓库下载
+  app.get('/wnpm-download/:name/:version/*', wnpmDownload);
 
   // before /:name/:version
   // get all modules, for npm search
